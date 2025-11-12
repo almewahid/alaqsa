@@ -1,0 +1,95 @@
+{
+  "name": "Teacher",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u0627\u0633\u0645 \u0627\u0644\u0645\u062f\u0631\u0633"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "\u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u062f\u0631\u0633"
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\u0627\u0644\u0645\u0648\u0627\u062f \u0627\u0644\u062a\u064a \u064a\u062f\u0631\u0633\u0647\u0627"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u0646\u0628\u0630\u0629 \u0639\u0646 \u0627\u0644\u0645\u062f\u0631\u0633"
+    },
+    "education_levels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "\u0627\u0628\u062a\u062f\u0627\u0626\u064a",
+          "\u0645\u062a\u0648\u0633\u0637",
+          "\u062b\u0627\u0646\u0648\u064a",
+          "\u062c\u0627\u0645\u0639\u064a"
+        ]
+      },
+      "description": "\u0627\u0644\u0645\u0631\u0627\u062d\u0644 \u0627\u0644\u062f\u0631\u0627\u0633\u064a\u0629"
+    },
+    "teaching_type": {
+      "type": "string",
+      "enum": [
+        "\u0623\u0648\u0646\u0644\u0627\u064a\u0646",
+        "\u0645\u0646\u0627\u0632\u0644",
+        "\u0643\u0644\u0627\u0647\u0645\u0627"
+      ],
+      "description": "\u0646\u0648\u0639 \u0627\u0644\u062a\u062f\u0631\u064a\u0633"
+    },
+    "price_per_session": {
+      "type": "number",
+      "description": "\u0633\u0639\u0631 \u0627\u0644\u062d\u0635\u0629 \u0627\u0644\u0648\u0627\u062d\u062f\u0629 \u0628\u0627\u0644\u0631\u064a\u0627\u0644"
+    },
+    "price_four_sessions": {
+      "type": "number",
+      "description": "\u0633\u0639\u0631 \u0623\u0631\u0628\u0639 \u062d\u0635\u0635 \u0628\u0627\u0644\u0631\u064a\u0627\u0644"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "\u0627\u0644\u062a\u0642\u064a\u064a\u0645 \u0645\u0646 5"
+    },
+    "total_students": {
+      "type": "number",
+      "default": 0,
+      "description": "\u0639\u062f\u062f \u0627\u0644\u0637\u0644\u0627\u0628"
+    },
+    "total_sessions": {
+      "type": "number",
+      "default": 0,
+      "description": "\u0639\u062f\u062f \u0627\u0644\u062d\u0635\u0635"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u0645\u062f\u0631\u0633 \u0645\u0645\u064a\u0632"
+    },
+    "phone": {
+      "type": "string",
+      "description": "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641"
+    },
+    "bio": {
+      "type": "string",
+      "description": "\u0627\u0644\u0633\u064a\u0631\u0629 \u0627\u0644\u0630\u0627\u062a\u064a\u0629 \u0627\u0644\u062a\u0641\u0635\u064a\u0644\u064a\u0629"
+    },
+    "experience_years": {
+      "type": "number",
+      "description": "\u0633\u0646\u0648\u0627\u062a \u0627\u0644\u062e\u0628\u0631\u0629"
+    }
+  },
+  "required": [
+    "name",
+    "subjects",
+    "teaching_type",
+    "price_per_session",
+    "price_four_sessions"
+  ]
+}
