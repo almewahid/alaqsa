@@ -19,9 +19,8 @@ import {
 } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
-/** تحويل وقت (مثال: "5:00 مساء - 6:00 مساء") إلى مدة بالدقائق */
+/** تحويل وقت إلى مدة */
 function calculateDuration(time: string) {
   try {
     const [start, end] = time.split(" - ");
@@ -44,7 +43,7 @@ function calculateDuration(time: string) {
   }
 }
 
-/** Countdown: يعرض الأيام/الساعات/الدقائق بطريقة صحيحة في صفحات RTL */
+/** عد تنازلي */
 function Countdown({ iso }: { iso: string }) {
   const [label, setLabel] = useState("");
 
@@ -59,29 +58,15 @@ function Countdown({ iso }: { iso: string }) {
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
-
-      // نعرض الأرقام بصيغة LTR داخل صفحة RTL عبر spans بعلامة dir="ltr"
       setLabel(
-        `⏳ ` +
-          `${"<DAYS>"} `.replace(
-            "<DAYS>",
-            `<span dir="ltr">${days}</span>ي`
-          ) +
-          ` ${"<HOURS>"} `.replace(
-            "<HOURS>",
-            `<span dir="ltr">${hours}</span>س`
-          ) +
-          ` ${"<MINS>"} `.replace("<MINS>", `<span dir="ltr">${minutes}</span>د`)
+        `⏳ <span dir="ltr">${days}</span>ي <span dir="ltr">${hours}</span>س <span dir="ltr">${minutes}</span>د`
       );
     };
-
-    // تحديث فوري ثم كل ثانية
     update();
     const iv = setInterval(update, 1000);
     return () => clearInterval(iv);
   }, [iso]);
 
-  // label يحتوي HTML صغير (مع spans dir="ltr") — ندرجه بأمان باستخدام dangerouslySetInnerHTML
   return (
     <p
       className="text-sm text-red-500 flex items-center gap-1 justify-end"
@@ -90,23 +75,22 @@ function Countdown({ iso }: { iso: string }) {
   );
 }
 
-export default function MyLessons() {
-  // فلتر البحث وفلتر المادة
+export default function TeacherLessons() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("الكل");
 
   const [stats] = useState({
-    total: 8,
-    completed: 3,
+    total: 6,
+    completed: 2,
     upcoming: 3,
-    remaining: 2,
+    cancelled: 1,
   });
 
-  // بيانات تجريبية (date ISO لل countdown)
+  // بيانات تجريبية باسم الطالب
   const upcomingLessons = [
     {
       id: 1,
-      teacher: "محمد أحمد",
+      student: "أحمد محمد",
       subject: "رياضيات - ثانوي",
       date: "2025-09-12T17:00:00",
       displayDate: "الجمعة 12 سبتمبر 2025",
@@ -115,7 +99,7 @@ export default function MyLessons() {
     },
     {
       id: 2,
-      teacher: "سارة خالد",
+      student: "سارة خالد",
       subject: "لغة إنجليزية - متوسط",
       date: "2025-09-14T17:00:00",
       displayDate: "الأحد 14 سبتمبر 2025",
@@ -127,49 +111,33 @@ export default function MyLessons() {
   const completedLessons = [
     {
       id: 3,
-      teacher: "أحمد علي",
+      student: "محمد علي",
       subject: "فيزياء - ثانوي",
       date: "2025-09-05T19:00:00",
       displayDate: "الجمعة 5 سبتمبر 2025",
       time: "7:00 مساء - 8:00 مساء",
-    },
-    {
-      id: 5,
-      teacher: "منى الشريف",
-      subject: "رياضيات - ثانوي",
-      date: "2025-09-08T16:00:00",
-      displayDate: "الاثنين 8 سبتمبر 2025",
-      time: "4:00 مساء - 5:00 مساء",
     },
   ];
 
   const cancelledLessons = [
     {
       id: 4,
-      teacher: "منى حسن",
+      student: "منى حسن",
       subject: "كيمياء - ثانوي",
       date: "2025-09-01T16:00:00",
       displayDate: "الاثنين 1 سبتمبر 2025",
       time: "4:00 مساء - 5:00 مساء",
     },
-    {
-      id: 6,
-      teacher: "عمرو فؤاد",
-      subject: "إنجليزي - متوسط",
-      date: "2025-08-31T10:00:00",
-      displayDate: "الأحد 31 أغسطس 2025",
-      time: "10:00 صباحًا - 11:00 صباحًا",
-    },
   ];
 
-  /* فلترة (بحروف صغيرة لمطابقة غير حساسة لحالة الأحرف) */
+  // فلترة
   const filterLessons = (lessons: any[]) => {
     const q = search.trim().toLowerCase();
     const sub = filter === "الكل" ? "" : filter.toLowerCase();
     return lessons.filter((l) => {
-      const teacher = (l.teacher || "").toLowerCase();
+      const student = (l.student || "").toLowerCase();
       const subject = (l.subject || "").toLowerCase();
-      const matchesSearch = !q || teacher.includes(q) || subject.includes(q);
+      const matchesSearch = !q || student.includes(q) || subject.includes(q);
       const matchesSubject = !sub || subject.includes(sub);
       return matchesSearch && matchesSubject;
     });
@@ -179,11 +147,11 @@ export default function MyLessons() {
     <div dir="rtl" className="p-6 space-y-6">
       {/* العنوان */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">جلساتي التعليمية</h1>
-        <p className="text-gray-500 text-lg">تتبع جلساتك وإدارة رحلتك التعليمية</p>
+        <h1 className="text-3xl font-bold">جلساتي مع الطلاب</h1>
+        <p className="text-gray-500 text-lg">إدارة جلساتك التعليمية مع الطلاب</p>
       </div>
 
-      {/* الإحصائيات: كرتان في الصف (أو 2 في الصف على الديسك) */}
+      {/* إحصائيات */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-4 grid grid-cols-2 items-center shadow-md rounded-lg">
           <BookOpen className="h-14 w-14 text-blue-500 mx-auto" />
@@ -210,22 +178,22 @@ export default function MyLessons() {
         </Card>
 
         <Card className="p-4 grid grid-cols-2 items-center shadow-md rounded-lg">
-          <XCircle className="h-14 w-14 text-purple-500 mx-auto" />
+          <XCircle className="h-14 w-14 text-red-500 mx-auto" />
           <div className="text-right">
-            <p className="text-base text-gray-500">الجلسات المتبقية</p>
-            <p className="text-2xl font-bold">{stats.remaining}</p>
+            <p className="text-base text-gray-500">الجلسات الملغاة</p>
+            <p className="text-2xl font-bold">{stats.cancelled}</p>
           </div>
         </Card>
       </div>
 
-      {/* الفلاتر في المنتصف */}
+      {/* الفلاتر */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-4">
         <div className="relative w-full md:w-1/3">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث باسم المدرس أو المادة..."
+            placeholder="ابحث باسم الطالب أو المادة..."
             className="w-full rounded-xl border border-gray-300 p-3 pr-10 text-right focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
           />
           <Search className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
@@ -247,30 +215,15 @@ export default function MyLessons() {
         </div>
       </div>
 
-      {/* التبويبات مع ألوان */}
+      {/* تبويبات */}
       <Tabs defaultValue="upcoming" className="w-full">
         <TabsList className="flex justify-center gap-4 rounded-xl p-2 w-fit mx-auto">
-          <TabsTrigger
-            value="upcoming"
-            className="px-4 py-2 rounded-lg data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700"
-          >
-            القادمة
-          </TabsTrigger>
-          <TabsTrigger
-            value="completed"
-            className="px-4 py-2 rounded-lg data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
-          >
-            المكتملة
-          </TabsTrigger>
-          <TabsTrigger
-            value="cancelled"
-            className="px-4 py-2 rounded-lg data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
-          >
-            الملغاة
-          </TabsTrigger>
+          <TabsTrigger value="upcoming">القادمة</TabsTrigger>
+          <TabsTrigger value="completed">المكتملة</TabsTrigger>
+          <TabsTrigger value="cancelled">الملغاة</TabsTrigger>
         </TabsList>
 
-        {/* ===== القادمة ===== */}
+        {/* القادمة */}
         <TabsContent value="upcoming" className="mt-6">
           {filterLessons(upcomingLessons).length === 0 ? (
             <Card className="p-8 text-center shadow-md rounded-lg">
@@ -287,7 +240,7 @@ export default function MyLessons() {
                 >
                   <Card className="p-4 shadow-md rounded-lg">
                     <div className="grid grid-cols-2 gap-4 items-center">
-                      {/* اليسار: أزرار / حالة */}
+                      {/* أزرار التحكم */}
                       <div className="flex flex-col items-start gap-2">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -298,51 +251,34 @@ export default function MyLessons() {
                         >
                           {lesson.status}
                         </span>
-
-                        {/* زر الدخول ملون حسب الحالة */}
-                        <Button
-                          className={`w-28 h-10 text-white rounded-md ${
-                            lesson.status === "مؤكد"
-                              ? "bg-gradient-to-r from-green-500 to-green-600"
-                              : "bg-gradient-to-r from-orange-500 to-orange-600"
-                          }`}
-                        >
-                          دخول
+                        <Button className="w-28 h-10 bg-blue-500 text-white rounded-md">
+                          بدء الجلسة
                         </Button>
-
-                        <Button className="w-28 h-10 text-red-600 border border-red-300 bg-white rounded-md">
-                          إلغاء
+                        <Button className="w-28 h-10 border border-gray-300 text-gray-600 bg-white rounded-md">
+                          إعادة جدولة
                         </Button>
                       </div>
 
-                      {/* اليمين: بيانات (مع أيقونات قبل النص وكبر خط) */}
+                      {/* بيانات الطالب */}
                       <div className="text-right space-y-1">
                         <h3 className="font-semibold text-lg flex items-center gap-2 justify-end">
                           <User className="h-5 w-5 text-gray-700" />
-                          {lesson.teacher}
+                          {lesson.student}
                         </h3>
-
                         <p className="text-base text-gray-800 flex items-center gap-2 justify-end">
                           <BookOpen className="h-5 w-5 text-blue-500" />
                           {lesson.subject}
                         </p>
-
                         <p className="text-sm flex items-center gap-2 justify-end">
                           <Calendar className="h-4 w-4 text-red-500" />
                           {lesson.displayDate}
                         </p>
-
-                        {/* الوقت في سطر منفصل */}
                         <p className="text-sm text-gray-800 flex items-center gap-2 justify-end">
                           ⏰ {lesson.time}
                         </p>
-
-                        {/* المدة في سطر منفصل */}
                         <p className="text-sm text-gray-500 flex items-center gap-2 justify-end">
                           ({calculateDuration(lesson.time)})
                         </p>
-
-                        {/* العد التنازلي (بـ spans LTR داخل HTML) */}
                         <Countdown iso={lesson.date} />
                       </div>
                     </div>
@@ -353,7 +289,7 @@ export default function MyLessons() {
           )}
         </TabsContent>
 
-        {/* ===== المكتملة ===== */}
+        {/* المكتملة */}
         <TabsContent value="completed" className="mt-6">
           {filterLessons(completedLessons).length === 0 ? (
             <Card className="p-8 text-center shadow-md rounded-lg">
@@ -362,24 +298,16 @@ export default function MyLessons() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filterLessons(completedLessons).map((lesson, i) => (
-                <motion.div
-                  key={lesson.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                >
+                <motion.div key={lesson.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                   <Card className="p-4 shadow-md rounded-lg">
                     <div className="grid grid-cols-2 gap-4 items-center">
-                      <div className="flex flex-col items-start gap-2">
-                        <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
-                          مكتملة
-                        </span>
-                      </div>
-
+                      <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                        مكتملة
+                      </span>
                       <div className="text-right space-y-1">
                         <h3 className="font-semibold text-lg flex items-center gap-2 justify-end">
                           <User className="h-5 w-5 text-gray-700" />
-                          {lesson.teacher}
+                          {lesson.student}
                         </h3>
                         <p className="text-base text-gray-800 flex items-center gap-2 justify-end">
                           <BookOpen className="h-5 w-5 text-blue-500" />
@@ -404,7 +332,7 @@ export default function MyLessons() {
           )}
         </TabsContent>
 
-        {/* ===== الملغاة ===== */}
+        {/* الملغاة */}
         <TabsContent value="cancelled" className="mt-6">
           {filterLessons(cancelledLessons).length === 0 ? (
             <Card className="p-8 text-center shadow-md rounded-lg">
@@ -413,24 +341,16 @@ export default function MyLessons() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filterLessons(cancelledLessons).map((lesson, i) => (
-                <motion.div
-                  key={lesson.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                >
+                <motion.div key={lesson.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                   <Card className="p-4 shadow-md rounded-lg">
                     <div className="grid grid-cols-2 gap-4 items-center">
-                      <div className="flex flex-col items-start gap-2">
-                        <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-700">
-                          ملغاة
-                        </span>
-                      </div>
-
+                      <span className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-700">
+                        ملغاة
+                      </span>
                       <div className="text-right space-y-1">
                         <h3 className="font-semibold text-lg flex items-center gap-2 justify-end">
                           <User className="h-5 w-5 text-gray-700" />
-                          {lesson.teacher}
+                          {lesson.student}
                         </h3>
                         <p className="text-base text-gray-800 flex items-center gap-2 justify-end">
                           <BookOpen className="h-5 w-5 text-blue-500" />

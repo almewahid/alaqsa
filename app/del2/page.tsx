@@ -1,325 +1,239 @@
-"use client"
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { MessageCircle, Mic, Video, BookOpen } from "lucide-react";
+import { motion } from "framer-motion";
 
-import { useState } from "react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import {
-  Bell,
-  BookOpen,
-  Calendar,
-  MessageSquare,
-  Settings,
-  User,
-  Video,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Menu,
-  X,
-} from "lucide-react"
-
-// بيانات الطالب
-const studentData = {
-  name: "أحمد محمد",
-  completedSessions: 24,
-  upcomingSessions: 3,
-  overallProgress: 78,
-}
-
-// بيانات الجلسات القادمة
-const upcomingSessions = [
-  {
-    id: 1,
-    teacher: "د. سارة أحمد",
-    subject: "الرياضيات",
-    date: "2024-01-15",
-    time: "14:00",
-    status: "مجدولة" as const,
-  },
-  {
-    id: 2,
-    teacher: "أ. محمد علي",
-    subject: "الفيزياء",
-    date: "2024-01-16",
-    time: "16:30",
-    status: "مجدولة" as const,
-  },
-  {
-    id: 3,
-    teacher: "د. فاطمة حسن",
-    subject: "الكيمياء",
-    date: "2024-01-17",
-    time: "10:00",
-    status: "ملغاة" as const,
-  },
-]
-
-// بيانات الإعلانات
-const announcements = [
-  {
-    id: 1,
-    title: "تحديث في جدول الحصص",
-    message: "تم تعديل موعد حصة الرياضيات لتصبح يوم الثلاثاء بدلاً من الاثنين",
-    date: "2024-01-10",
-  },
-  {
-    id: 2,
-    title: "صيانة النظام",
-    message: "سيتم إجراء صيانة يوم الجمعة من الساعة 1 صباحاً حتى 3 صباحاً",
-    date: "2024-01-12",
-  },
-]
-
-// روابط القائمة الجانبية
-const sidebarItems = [
-  { icon: User, label: "الملف الشخصي", href: "/profile" },
-  { icon: BookOpen, label: "جلساتي", href: "/sessions" },
-  { icon: Calendar, label: "الحجوزات", href: "/bookings" },
-  { icon: MessageSquare, label: "الرسائل", href: "/messages" },
-  { icon: Settings, label: "الإعدادات", href: "/settings" },
-]
-
-// ألوان الحالات
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "مجدولة":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-    case "مكتملة":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-    case "ملغاة":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 line-through"
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+// بيانات تجريبية - في تطبيق فعلي تأتي من API
+const sampleVerses = {
+  "سورة الفاتحة": {
+    1: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+    2: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+    3: "الرَّحْمَٰنِ الرَّحِيمِ",
+    4: "مَالِكِ يَوْمِ الدِّينِ",
+    5: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+    6: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+    7: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ"
   }
-}
+};
 
-// أيقونات الحالات
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "مجدولة":
-      return <Clock className="h-3 w-3" />
-    case "مكتملة":
-      return <CheckCircle className="h-3 w-3" />
-    case "ملغاة":
-      return <XCircle className="h-3 w-3" />
-    default:
-      return null
-  }
-}
+export default function VerseDisplay({ surahName, verses, onAddComment }) {
+  const [selectedText, setSelectedText] = useState("");
+  const [selectedVerse, setSelectedVerse] = useState(null);
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [commentType, setCommentType] = useState(null);
+  const [commentData, setCommentData] = useState("");
 
-export default function StudentDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  // استخراج الآيات
+  const parseVersesRange = (versesText) => {
+    const match = versesText.match(/من الآية (\d+) إلى (\d+)/);
+    if (match) {
+      const from = parseInt(match[1]);
+      const to = parseInt(match[2]);
+      return { from, to };
+    }
+    return null;
+  };
+
+  const getVersesToDisplay = () => {
+    const range = parseVersesRange(verses);
+    if (!range || !sampleVerses[surahName]) return [];
+
+    const versesData = [];
+    for (let i = range.from; i <= range.to; i++) {
+      if (sampleVerses[surahName][i]) {
+        versesData.push({
+          number: i,
+          text: sampleVerses[surahName][i]
+        });
+      }
+    }
+    return versesData;
+  };
+
+  // عند تحديد النص
+  const handleTextSelection = (verseNumber, selectedText) => {
+    if (selectedText.trim()) {
+      setSelectedText(selectedText);
+      setSelectedVerse(verseNumber);
+      setShowCommentDialog(true);
+    }
+  };
+
+  // حفظ التعليق
+  const handleSaveComment = () => {
+    if (selectedText && selectedVerse && commentType) {
+      const newComment = {
+        word_or_verse: selectedText,
+        verse_number: selectedVerse,
+        comment_type: commentType,
+        content: commentData,
+        surah_name: surahName
+      };
+
+      onAddComment(newComment);
+      setShowCommentDialog(false);
+      setSelectedText("");
+      setSelectedVerse(null);
+      setCommentType(null);
+      setCommentData("");
+    }
+  };
+
+  const versesToDisplay = getVersesToDisplay();
 
   return (
-    <div className="min-h-screen bg-background flex" dir="rtl">
-      {/* خلفية القائمة الجانبية للجوال */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* الشريط الجانبي */}
-      <aside
-        className={`
-          fixed top-0 right-0 z-50 h-full w-64 bg-sidebar border-l border-sidebar-border transform transition-transform duration-300 ease-in-out
-          ${sidebarOpen ? "translate-x-0" : "translate-x-full"}
-          lg:translate-x-0 lg:static lg:z-auto
-        `}
-      >
-        <div className="flex h-full flex-col">
-          {/* رأس القائمة */}
-          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
-            <h2 className="text-lg font-semibold text-sidebar-foreground">لوحة التحكم</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* روابط القائمة */}
-          <nav className="flex-1 p-4 space-y-2">
-            {sidebarItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="ghost"
-                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                asChild
-              >
-                <a href={item.href}>
-                  <item.icon className="ml-2 h-4 w-4" />
-                  {item.label}
-                </a>
-              </Button>
-            ))}
-          </nav>
-        </div>
-      </aside>
-
-      {/* المحتوى الرئيسي */}
-      <div className="flex-1">
-        {/* الشريط العلوي */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
-              <h1 className="text-xl font-semibold">
-                مرحباً، {studentData.name}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -left-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </Button>
-              <Avatar className="bg-primary text-white">
-                <AvatarFallback>
-                  {studentData.name.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </header>
-
-        {/* محتوى اللوحة */}
-        <main className="p-6 space-y-6">
-          {/* بطاقة الترحيب والإحصائيات */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                👋 مرحباً بك، {studentData.name}!
-              </CardTitle>
-              <CardDescription>
-                لديك {studentData.upcomingSessions} جلسة قادمة هذا الأسبوع
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                <div>
-                  <div className="text-3xl font-bold text-primary flex items-center justify-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    {studentData.completedSessions}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    جلسة مكتملة
-                  </div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-blue-600 flex items-center justify-center gap-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    {studentData.upcomingSessions}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    جلسة قادمة
-                  </div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-green-600">
-                    {studentData.overallProgress}%
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    التقدم العام
-                  </div>
-                  <Progress value={studentData.overallProgress} className="mt-2" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* الجلسات القادمة */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  الجلسات القادمة
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {upcomingSessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg"
-                  >
-                    <div className="space-y-1">
-                      <div className="font-medium">{session.subject}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {session.teacher}
-                      </div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {session.date} - {session.time}
-                      </div>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <Card className="glass-effect shadow-lg border-emerald-200">
+        <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900">
+            <BookOpen className="w-6 h-6 text-emerald-600" />
+            {surahName} - {verses}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {versesToDisplay.length > 0 ? (
+            <div className="space-y-6">
+              {versesToDisplay.map((verse) => (
+                <motion.div
+                  key={verse.number}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: verse.number * 0.1 }}
+                  className="p-4 bg-white rounded-xl border border-gray-100 hover:border-emerald-200 transition-all duration-300"
+                >
+                  <div className="flex items-start gap-4">
+                    <Badge className="bg-emerald-100 text-emerald-800 font-semibold min-w-8 h-8 flex items-center justify-center rounded-full">
+                      {verse.number}
+                    </Badge>
+                    <div
+                      className="flex-1 text-right leading-loose text-xl arabic-text cursor-text select-text"
+                      style={{ fontFamily: "Amiri, serif" }}
+                      onMouseUp={() => {
+                        const selection = window.getSelection();
+                        const selectedText = selection.toString();
+                        if (selectedText) {
+                          handleTextSelection(verse.number, selectedText);
+                        }
+                      }}
+                    >
+                      {verse.text}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(session.status)}>
-                        {getStatusIcon(session.status)}
-                        <span className="mr-1">{session.status}</span>
-                      </Badge>
-                      {session.status === "مجدولة" && (
-                        <Button size="sm" className="gap-1">
-                          <Video className="h-3 w-3" />
-                          انضمام
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Comment Dialog */}
+              {showCommentDialog && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                >
+                  <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl text-center">
+                    <h3 className="font-bold text-lg mb-4">إضافة تعليق</h3>
+                    <div className="bg-gray-50 p-3 rounded-lg mb-4 text-right">
+                      <p className="text-sm text-gray-600 mb-1">النص المحدد:</p>
+                      <p className="font-medium arabic-text">{selectedText}</p>
+                    </div>
+
+                    {!commentType ? (
+                      // اختيار نوع التعليق
+                      <div className="space-y-3">
+                        <Button
+                          onClick={() => setCommentType("نصي")}
+                          className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          إضافة تعليق نصي
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
 
-            {/* الإعلانات والتنبيهات */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  الإعلانات والتنبيهات
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {announcements.map((announcement, index) => (
-                  <div key={announcement.id}>
-                    <div className="space-y-2">
-                      <div className="font-medium">{announcement.title}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {announcement.message}
+                        <Button
+                          onClick={() => setCommentType("صوتي")}
+                          className="w-full justify-start bg-green-600 hover:bg-green-700"
+                        >
+                          <Mic className="w-4 h-4 mr-2" />
+                          إضافة تسجيل صوتي
+                        </Button>
+
+                        <Button
+                          onClick={() => setCommentType("فيديو")}
+                          className="w-full justify-start bg-red-600 hover:bg-red-700"
+                        >
+                          <Video className="w-4 h-4 mr-2" />
+                          إضافة رابط فيديو
+                        </Button>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {announcement.date}
+                    ) : (
+                      // نموذج إدخال التعليق
+                      <div className="space-y-4">
+                        {commentType === "نصي" && (
+                          <Textarea
+                            value={commentData}
+                            onChange={(e) => setCommentData(e.target.value)}
+                            placeholder="أدخل التعليق النصي هنا..."
+                            className="text-right"
+                          />
+                        )}
+
+                        {commentType === "فيديو" && (
+                          <Input
+                            value={commentData}
+                            onChange={(e) => setCommentData(e.target.value)}
+                            placeholder="ضع رابط الفيديو هنا..."
+                            className="text-right"
+                          />
+                        )}
+
+                        {commentType === "صوتي" && (
+                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-sm text-green-700 mb-2">
+                              تسجيل صوتي (ميزة تجريبية)
+                            </p>
+                            <Button className="bg-green-600 hover:bg-green-700">
+                              <Mic className="w-4 h-4 ml-2" />
+                              بدء التسجيل
+                            </Button>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 justify-center">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowCommentDialog(false);
+                              setCommentType(null);
+                              setCommentData("");
+                            }}
+                          >
+                            إلغاء
+                          </Button>
+                          <Button
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={handleSaveComment}
+                          >
+                            حفظ
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    {index < announcements.length - 1 && (
-                      <Separator className="mt-4" />
                     )}
                   </div>
-                ))}
-                <div className="flex justify-end">
-                  <Button variant="link" className="text-sm text-primary">
-                    عرض الكل
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </div>
-  )
+                </motion.div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">
+                لا يمكن عرض الآيات - تحقق من اختيار السورة والآيات
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
 }
