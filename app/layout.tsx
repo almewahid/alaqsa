@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -11,16 +12,17 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "منصة التعليم الإلكتروني",
+  title: "منصة الأقصى التعليمية",
   description: "منصة تعليمية تفاعلية للطلاب والمعلمين",
-  generator: "v0.app",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <body className="font-cairo antialiased bg-gray-50 min-h-screen">
-        <AppShell>{children}</AppShell>
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );

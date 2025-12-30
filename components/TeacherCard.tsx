@@ -7,7 +7,7 @@ import { Amiri } from "next/font/google"
 const amiri = Amiri({ subsets: ["arabic"], weight: ["400", "700"] })
 
 export interface Teacher {
-  id: number
+  id: string
   name: string
   subject: string
   curriculum: string
@@ -20,6 +20,8 @@ export interface Teacher {
   bio: string
   gradient: string
   avatarColor: string
+  lessonType?: string
+  featured?: boolean
 }
 
 export default function TeacherCard({ teacher }: { teacher: Teacher }) {
@@ -30,8 +32,9 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
   const handleMessage = () => router.push("/messages")
   const handleShare = () => alert(`تم نسخ رابط ملف المدرس ${teacher.name} ✅`)
   const handleFavorite = () => setIsFavorite(!isFavorite)
+  const handleViewProfile = () => router.push(`/teacher/${teacher.id}`)
 
-  const filteredName = teacher.name.replace(/^أ\\.?\\s*/, "").replace(/^أستاذ\\s*/, "")
+  const filteredName = teacher.name.replace(/^أ\.?\s*/, "").replace(/^أستاذ\s*/, "")
   const initials = filteredName
     .split(" ")
     .map((w) => w[0])
@@ -42,12 +45,17 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
     الرياضيات: "📐",
     "اللغة العربية": "📖",
     الفيزياء: "⚛️",
+    الكيمياء: "🧪",
+    "اللغة الإنجليزية": "🔤",
+    "القرآن الكريم": "📕",
+    "قرآن كريم": "📕",
   }
   const subjectIcon = subjectIcons[teacher.subject] || "📘"
 
   const curriculumIcons: Record<string, string> = {
     "المنهج السعودي": "📗",
     "المنهج المصري": "📕",
+    "المنهج الكويتي": "📘",
   }
   const curriculumIcon = curriculumIcons[teacher.curriculum] || "📘"
 
@@ -55,6 +63,7 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
     "المرحلة الابتدائية": "🌱",
     "المرحلة المتوسطة": "🏫",
     "المرحلة الثانوية": "🎓",
+    "المرحلة الجامعية": "🎯",
   }
   const stageIcon = stageIcons[teacher.stage] || "🎓"
 
@@ -127,11 +136,11 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
               </p>
             </div>
             <div className="flex justify-center gap-4 mt-2 text-gray-700">
-              <span>😍 {teacher.students} طالب</span>
+              <span>👥 {teacher.students} طالب</span>
               <span>📅 {teacher.lessons} حصة</span>
             </div>
             <div className="mt-1">
-              <span className="text-lg font-bold text-blue-600">{teacher.price} ر.س</span>
+              <span className="text-lg font-bold text-blue-600">{teacher.price} د.ك</span>
               <span className="text-gray-500 text-sm mr-1">/ الحصة</span>
             </div>
           </div>
@@ -140,7 +149,7 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
             <div className="flex gap-2">
               <button
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-1"
-                onClick={() => router.push(`/teacher-profile/view`)}
+                onClick={handleViewProfile}
               >
                 📑 عرض الملف
               </button>

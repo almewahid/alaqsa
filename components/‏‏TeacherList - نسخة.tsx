@@ -12,30 +12,13 @@ interface TeacherListProps {
 
 // أيقونة القرآن SVG
 const QuranIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* الرحلة - اليسار */}
-    <path d="M10 35 L6 50 L14 48 Z" fill="#8B4513" stroke="#654321" strokeWidth="0.5"/>
-    {/* الرحلة - اليمين */}
-    <path d="M54 35 L58 50 L50 48 Z" fill="#8B4513" stroke="#654321" strokeWidth="0.5"/>
-    
-    {/* الكتاب الأيسر */}
-    <path d="M12 15 L12 35 L30 38 L32 18 Z" fill="#047857" stroke="#065F46" strokeWidth="1.5"/>
-    <path d="M14 17 L14 33 L29 35 L30 19 Z" fill="#059669"/>
-    <path d="M16 20 L28 21.5" stroke="#10B981" strokeWidth="0.5" opacity="0.6"/>
-    <path d="M16 23 L28 24.5" stroke="#10B981" strokeWidth="0.5" opacity="0.6"/>
-    
-    {/* الكتاب الأيمن */}
-    <path d="M52 15 L52 35 L34 38 L32 18 Z" fill="#047857" stroke="#065F46" strokeWidth="1.5"/>
-    <path d="M50 17 L50 33 L35 35 L34 19 Z" fill="#059669"/>
-    <path d="M48 20 L36 21.5" stroke="#10B981" strokeWidth="0.5" opacity="0.6"/>
-    <path d="M48 23 L36 24.5" stroke="#10B981" strokeWidth="0.5" opacity="0.6"/>
-    
-    {/* الجلد البني للحواف */}
-    <path d="M10 15 L12 15 L12 35 L10 35 Z" fill="#8B4513"/>
-    <path d="M52 15 L54 15 L54 35 L52 35 Z" fill="#8B4513"/>
-    
-    {/* الشريط الأبيض في المنتصف */}
-    <path d="M30 18 L32 18 L32 38 L30 38 Z" fill="#F3F4F6"/>
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H19C20.1046 22 21 21.1046 21 20V4C21 2.89543 20.1046 2 19 2Z" fill="#059669" stroke="#047857" strokeWidth="1.5"/>
+    <path d="M8 6H17" stroke="#10B981" strokeWidth="1" strokeLinecap="round"/>
+    <path d="M8 10H17" stroke="#10B981" strokeWidth="1" strokeLinecap="round"/>
+    <path d="M8 14H17" stroke="#10B981" strokeWidth="1" strokeLinecap="round"/>
+    <circle cx="12.5" cy="11" r="4" fill="#34D399" opacity="0.3"/>
+    <path d="M12.5 8C13.3284 8 14 8.67157 14 9.5C14 10.3284 13.3284 11 12.5 11C11.6716 11 11 10.3284 11 9.5C11 8.67157 11.6716 8 12.5 8Z" fill="#FCD34D"/>
   </svg>
 )
 
@@ -50,11 +33,17 @@ export default function TeacherList({
 
   // أيقونات المواد
   const subjectIcons: Record<string, { icon: string, color: string }> = {
-    "رياضيات": { icon: "➗", color: "blue" },
+    "الرياضيات": { icon: "📐", color: "blue" },
+    "رياضيات": { icon: "📐", color: "blue" },
+    "الفيزياء": { icon: "⚛️", color: "green" },
     "فيزياء": { icon: "⚛️", color: "green" },
+    "الكيمياء": { icon: "🧪", color: "purple" },
     "كيمياء": { icon: "🧪", color: "purple" },
+    "اللغة الإنجليزية": { icon: "🌐", color: "yellow" },
     "لغة إنجليزية": { icon: "🌐", color: "yellow" },
+    "اللغة العربية": { icon: "📖", color: "red" },
     "لغة عربية": { icon: "📖", color: "red" },
+    "القرآن الكريم": { icon: "📗", color: "teal" },
     "قرآن كريم": { icon: "📗", color: "teal" },
     "SCIENCE": { icon: "🔬", color: "cyan" },
   }
