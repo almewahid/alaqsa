@@ -1,6 +1,7 @@
-"use client"
-
-export const dynamic = "force-dynamic"  // ← هذا السطر اللي هيحل المشكلة
+// إجبار Next.js على عدم prerender صفحة الـ callback نهائياً
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -14,10 +15,8 @@ export default function AuthCallback() {
     const handleCallback = async () => {
       const supabase = createClient()
       
-      // الحصول على الدور من URL إذا كان موجوداً
       const role = searchParams.get('role') || 'student'
       
-      // التحقق من الجلسة
       const { data: { session }, error } = await supabase.auth.getSession()
       
       if (error) {
@@ -27,7 +26,6 @@ export default function AuthCallback() {
       }
       
       if (session) {
-        // التحقق من وجود المستخدم في قاعدة البيانات
         const { data: existingUser } = await supabase
           .from('users')
           .select('id, user_type')
@@ -35,16 +33,14 @@ export default function AuthCallback() {
           .single()
         
         if (existingUser) {
-          // المستخدم موجود - توجيه للصفحة الرئيسية
           router.push('/')
         } else {
-          // مستخدم جديد - إنشاء سجل في قاعدة البيانات
           const { data: userData, error: userError } = await supabase
             .from('users')
             .insert({
               auth_id: session.user.id,
               email: session.user.email!,
-              full_name: session.user.user_metadata.full_name || session.user.email!.split('@')[0],
+              full_name: session.user.user_metadata?.full_name || session.user.email!.split('@')[0],
               user_type: role,
               is_active: true,
             })
@@ -57,7 +53,6 @@ export default function AuthCallback() {
             return
           }
           
-          // إنشاء سجل في الجدول المخصص
           if (role === 'student') {
             await supabase.from('students').insert({
               user_id: userData.id,
@@ -80,7 +75,7 @@ export default function AuthCallback() {
           } else if (role === 'center') {
             await supabase.from('educational_centers').insert({
               user_id: userData.id,
-              center_name: session.user.user_metadata.full_name || 'مركز تعليمي',
+              center_name: session.user.user_metadata?.full_name || 'مركز تعليمي',
               rating: 0,
               is_active: true,
             })
@@ -88,7 +83,7 @@ export default function AuthCallback() {
           } else if (role === 'service') {
             await supabase.from('educational_services').insert({
               user_id: userData.id,
-              provider_name: session.user.user_metadata.full_name || 'مقدم خدمة',
+              provider_name: session.user.user_metadata?.full_name || 'مقدم خدمة',
               service_types: ['أبحاث علمية'],
               rating: 0,
             })
@@ -106,10 +101,11 @@ export default function AuthCallback() {
   }, [router, searchParams])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center" dir="rtl">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-xl text-gray-700 dark:text-gray-300">جاري تسجيل الدخول...</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4" dir="rtl">
+      <div className="text-center max-w-md mx-auto">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-6"></div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">جاري معالجة تسجيل الدخول...</h2>
+        <p className="text-lg text-gray-600 dark:text-gray-300">الرجاء الانتظار قليلاً</p>
       </div>
     </div>
   )
