@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"  // ← هذا السطر اللي هيحل المشكلة
-
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/auth'
