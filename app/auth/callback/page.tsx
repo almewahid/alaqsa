@@ -1,11 +1,13 @@
-// إجبار Next.js على عدم prerender صفحة الـ callback نهائياً
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
+"use client"  // ← الأول دايماً
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/auth'
+
+// ← الـ exports دي تحت الـ imports
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -13,28 +15,30 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const supabase = createClient()
-      
-      const role = searchParams.get('role') || 'student'
-      
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
-      if (error) {
-        console.error('Auth error:', error)
-        router.push('/login?error=auth_failed')
-        return
-      }
-      
-      if (session) {
-        const { data: existingUser } = await supabase
-          .from('users')
-          .select('id, user_type')
-          .eq('auth_id', session.user.id)
-          .single()
+      try {
+        const supabase = createClient()
+        const role = searchParams.get('role') || 'student'
         
-        if (existingUser) {
-          router.push('/')
-        } else {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Auth error:', error)
+          router.push('/login?error=auth_failed')
+          return
+        }
+        
+        if (session) {
+          const { data: existingUser } = await supabase
+            .from('users')
+            .select('id, user_type')
+            .eq('auth_id', session.user.id)
+            .single()
+          
+          if (existingUser) {
+            router.push('/')
+            return
+          }
+          
           const { data: userData, error: userError } = await supabase
             .from('users')
             .insert({
@@ -53,6 +57,7 @@ export default function AuthCallback() {
             return
           }
           
+          // إنشاء السجلات حسب النوع
           if (role === 'student') {
             await supabase.from('students').insert({
               user_id: userData.id,
@@ -91,9 +96,12 @@ export default function AuthCallback() {
           } else {
             router.push('/')
           }
+        } else {
+          router.push('/login')
         }
-      } else {
-        router.push('/login')
+      } catch (error) {
+        console.error('Callback error:', error)
+        router.push('/login?error=unknown')
       }
     }
     
