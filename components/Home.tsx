@@ -31,6 +31,7 @@ export default function StudentHomeScreen() {
         setLoading(true)
         setError(null)
         const data = await getTeachers()
+console.log('Teachers data:', data) // للتأكد
         setTeachers(data)
       } catch (err: any) {
         console.error('Error loading teachers:', err)

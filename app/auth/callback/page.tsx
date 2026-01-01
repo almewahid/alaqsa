@@ -1,13 +1,11 @@
-"use client"  // ← الأول دايماً
+"use client"
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/auth'
 
-// ← الـ exports دي تحت الـ imports
+// بس dynamic بس - كفاية للـ callback pages
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -57,7 +55,6 @@ export default function AuthCallback() {
             return
           }
           
-          // إنشاء السجلات حسب النوع
           if (role === 'student') {
             await supabase.from('students').insert({
               user_id: userData.id,

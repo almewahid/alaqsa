@@ -9,14 +9,14 @@ export interface Teacher {
   subject: string
   curriculum: string
   stage: string
-  rating: number
-  reviews: number
-  price: number
+  rating: string  // ✅ تم التغيير من number إلى string
+  reviews?: number
+  price: string   // ✅ تم التغيير من number إلى string
   students: number
   lessons: number
   bio: string
-  gradient: string
-  avatarColor: string
+  gradient?: string
+  avatarColor?: string
   lessonType: "online" | "home" | "both"
   discount?: string | null
   featured?: boolean
@@ -106,13 +106,13 @@ export default function TeacherCardShort({ teacher }: TeacherCardShortProps) {
 
           {/* تقييم تفصيلي */}
           <div className="text-yellow-500 text-sm">
-            ⭐ {typeof teacher.rating === 'number' ? teacher.rating.toFixed(1) : teacher.rating}{" "}
-            <span className="text-gray-500">({teacher.reviews} تقييم)</span>
+            ⭐ {teacher.rating}{" "}
+            <span className="text-gray-500">({teacher.reviews || 0} تقييم)</span>
           </div>
 
           {/* الأسعار */}
           <p className="text-blue-700 font-bold">{teacher.price} د.ك / الحصة</p>
-          <p className="text-gray-600">{(teacher.price * 4).toFixed(1)} د.ك / ٤ حصص</p>
+          <p className="text-gray-600">{(Number(teacher.price) * 4).toFixed(1)} د.ك / ٤ حصص</p>
 
           {/* الطلاب والحصص */}
           <p className="text-gray-700 text-sm">👥 {teacher.students} طالب</p>
@@ -138,7 +138,7 @@ export default function TeacherCardShort({ teacher }: TeacherCardShortProps) {
             onClick={handleViewProfile}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded-lg text-xs transition"
           >
-            📑 عرض الملف
+            🔎 عرض الملف
           </button>
           <button
             onClick={() => router.push('/messages')}
