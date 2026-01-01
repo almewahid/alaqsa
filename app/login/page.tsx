@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn, createClient } from '@/lib/auth'
+import { signIn } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -37,19 +38,26 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = async () => {
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: false,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
         },
-      })
-      if (error) throw error
-    } catch (err: any) {
-      setError(err.message || 'فشل تسجيل الدخول بـ Google')
-    }
+      },
+    })
+    
+    if (error) throw error
+    
+    // Google will redirect automatically
+  } catch (err: any) {
+    setError(err.message || 'فشل تسجيل الدخول بـ Google')
   }
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4" dir="rtl">

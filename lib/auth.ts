@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from './supabase'
 
 // جميع الأدوار المتاحة
 export type UserRole = 'student' | 'teacher' | 'center' | 'service' | 'moderator' | 'admin'
@@ -20,16 +20,7 @@ export interface UserProfile {
   profile_completed?: boolean
 }
 
-// إنشاء Supabase client
-function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-}
-
 export async function signIn(email: string, password: string) {
-  const supabase = createClient()
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -52,8 +43,6 @@ export async function signUp(
     permissions?: any
   }
 ) {
-  const supabase = createClient()
-  
   try {
     console.log('🔵 1. Starting signUp with:', { email, fullName, role })
     
@@ -109,7 +98,7 @@ export async function signUp(
       .from('users')
       .insert(userInsertData)
       .select('id')
-      .single()
+      .maybeSingle()
     
     console.log('🔵 9. Users table insert response:', {
       hasData: !!userData,
@@ -137,15 +126,15 @@ export async function signUp(
     console.log(`🔵 13. Creating ${role} profile...`)
     try {
       if (role === 'student') {
-        await createStudentProfile(supabase, userData.id)
+        await createStudentProfile(userData.id)
       } else if (role === 'teacher') {
-        await createTeacherProfile(supabase, userData.id)
+        await createTeacherProfile(userData.id)
       } else if (role === 'center') {
-        await createCenterProfile(supabase, userData.id, additionalData?.centerName || fullName)
+        await createCenterProfile(userData.id, additionalData?.centerName || fullName)
       } else if (role === 'service') {
-        await createServiceProfile(supabase, userData.id, additionalData)
+        await createServiceProfile(userData.id, additionalData)
       } else if (role === 'moderator' || role === 'admin') {
-        await createAdminProfile(supabase, userData.id, role, additionalData)
+        await createAdminProfile(userData.id, role, additionalData)
       }
       console.log(`✅ 14. ${role} profile created successfully`)
     } catch (error: any) {
@@ -166,7 +155,7 @@ export async function signUp(
   }
 }
 
-async function createStudentProfile(supabase: any, userId: string) {
+async function createStudentProfile(userId: string) {
   console.log('🔵 Creating student profile for user:', userId)
   const { error } = await supabase
     .from('students')
@@ -183,7 +172,7 @@ async function createStudentProfile(supabase: any, userId: string) {
   console.log('✅ Student profile created')
 }
 
-async function createTeacherProfile(supabase: any, userId: string) {
+async function createTeacherProfile(userId: string) {
   console.log('🔵 Creating teacher profile for user:', userId)
   const { error } = await supabase
     .from('teachers')
@@ -205,7 +194,7 @@ async function createTeacherProfile(supabase: any, userId: string) {
   console.log('✅ Teacher profile created')
 }
 
-async function createCenterProfile(supabase: any, userId: string, centerName: string) {
+async function createCenterProfile(userId: string, centerName: string) {
   console.log('🔵 Creating center profile for user:', userId)
   const { error } = await supabase
     .from('educational_centers')
@@ -227,7 +216,7 @@ async function createCenterProfile(supabase: any, userId: string, centerName: st
   console.log('✅ Center profile created')
 }
 
-async function createServiceProfile(supabase: any, userId: string, additionalData?: any) {
+async function createServiceProfile(userId: string, additionalData?: any) {
   console.log('🔵 Creating service profile for user:', userId)
   const { error } = await supabase
     .from('educational_services')
@@ -250,7 +239,7 @@ async function createServiceProfile(supabase: any, userId: string, additionalDat
   console.log('✅ Service profile created')
 }
 
-async function createAdminProfile(supabase: any, userId: string, role: 'moderator' | 'admin', additionalData?: any) {
+async function createAdminProfile(userId: string, role: 'moderator' | 'admin', additionalData?: any) {
   console.log('🔵 Creating admin profile for user:', userId)
   const { error } = await supabase
     .from('admins')
@@ -270,19 +259,16 @@ async function createAdminProfile(supabase: any, userId: string, role: 'moderato
 }
 
 export async function signOut() {
-  const supabase = createClient()
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
 
 export async function getUserProfile(authUserId: string): Promise<UserProfile | null> {
-  const supabase = createClient()
-  
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('*')
     .eq('auth_id', authUserId)
-    .single()
+    .maybeSingle() 
   
   if (userError || !userData) {
     console.error('User data fetch error:', userError)
@@ -294,13 +280,13 @@ export async function getUserProfile(authUserId: string): Promise<UserProfile | 
   let profileCompleted = false
   
   if (userRole === 'student') {
-    profileCompleted = await checkStudentComplete(supabase, userData.id)
+    profileCompleted = await checkStudentComplete(userData.id)
   } else if (userRole === 'teacher') {
-    profileCompleted = await checkTeacherComplete(supabase, userData.id)
+    profileCompleted = await checkTeacherComplete(userData.id)
   } else if (userRole === 'center') {
-    profileCompleted = await checkCenterComplete(supabase, userData.id)
+    profileCompleted = await checkCenterComplete(userData.id)
   } else if (userRole === 'service') {
-    profileCompleted = await checkServiceComplete(supabase, userData.id)
+    profileCompleted = await checkServiceComplete(userData.id)
   } else if (userRole === 'moderator' || userRole === 'admin') {
     profileCompleted = true
   }
@@ -317,17 +303,17 @@ export async function getUserProfile(authUserId: string): Promise<UserProfile | 
   }
 }
 
-async function checkStudentComplete(supabase: any, userId: string): Promise<boolean> {
+async function checkStudentComplete(userId: string): Promise<boolean> {
   const { data } = await supabase
     .from('students')
     .select('date_of_birth, education_level, gender')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   
   return !!(data?.date_of_birth && data?.education_level && data?.gender)
 }
 
-async function checkTeacherComplete(supabase: any, userId: string): Promise<boolean> {
+async function checkTeacherComplete(userId: string): Promise<boolean> {
   const { data: teacherData } = await supabase
     .from('teachers')
     .select(`
@@ -336,7 +322,7 @@ async function checkTeacherComplete(supabase: any, userId: string): Promise<bool
       teacher_subjects (count)
     `)
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   
   const hasSubjects = teacherData?.teacher_subjects?.[0]?.count > 0
   return !!(
@@ -346,28 +332,27 @@ async function checkTeacherComplete(supabase: any, userId: string): Promise<bool
   )
 }
 
-async function checkCenterComplete(supabase: any, userId: string): Promise<boolean> {
+async function checkCenterComplete(userId: string): Promise<boolean> {
   const { data } = await supabase
     .from('educational_centers')
     .select('center_name, center_type, contact_phone')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   
   return !!(data?.center_name && data?.center_type && data?.contact_phone)
 }
 
-async function checkServiceComplete(supabase: any, userId: string): Promise<boolean> {
+async function checkServiceComplete(userId: string): Promise<boolean> {
   const { data } = await supabase
     .from('educational_services')
     .select('provider_name, service_types')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   
   return !!(data?.provider_name && data?.service_types && data.service_types.length > 0)
 }
 
 export async function updateProfile(userId: string, updates: Partial<UserProfile>) {
-  const supabase = createClient()
   const { error } = await supabase
     .from('users')
     .update({
@@ -381,7 +366,6 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
 }
 
 export async function resetPassword(email: string) {
-  const supabase = createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
   })
@@ -429,5 +413,3 @@ export function hasPermission(userRole: UserRole, requiredRole: UserRole): boole
   
   return hierarchy[userRole] >= hierarchy[requiredRole]
 }
-
-export { createClient }

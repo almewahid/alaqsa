@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import { getUserProfile, signOut as authSignOut, UserProfile, createClient } from '@/lib/auth'
+import { getUserProfile, signOut as authSignOut, UserProfile } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 
 interface AuthContextType {
   user: User | null
@@ -53,8 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const supabase = createClient()
-    
     // الحصول على الجلسة الحالية
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)

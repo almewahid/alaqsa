@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signUp, UserRole, PublicRole, AdminRole, getRoleNameAr, createClient } from '@/lib/auth'
+import { signUp, UserRole, PublicRole, AdminRole, getRoleNameAr } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -20,9 +21,8 @@ export default function SignupPage() {
   const [showAdminRoles, setShowAdminRoles] = useState(false)
   const [clickCount, setClickCount] = useState(0)
   const [clickTimer, setClickTimer] = useState<NodeJS.Timeout | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false) // إضافة حماية جديدة
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // للكشف عن الضغط المزدوج
   const handleTitleClick = () => {
     setClickCount(prev => prev + 1)
     
@@ -41,24 +41,26 @@ export default function SignupPage() {
     }
   }
 
-  // تسجيل بـ Google
   const handleGoogleSignup = async () => {
     if (!selectedRole && step === 'role') {
       setError('يرجى اختيار نوع الحساب أولاً')
       return
     }
 
-    if (isSubmitting) return // منع الضغط المتكرر
+    if (isSubmitting) return
 
     try {
       setIsSubmitting(true)
-      const supabase = createClient()
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?role=${selectedRole || 'student'}`,
-        },
-      })
+  provider: 'google',
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback?role=${selectedRole || 'student'}`,
+    queryParams: {
+      access_type: 'offline',
+      prompt: 'consent',
+    },
+  },
+})
       if (error) throw error
     } catch (err: any) {
       setError(err.message || 'فشل التسجيل بـ Google')
@@ -68,7 +70,7 @@ export default function SignupPage() {
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role)
-    setError('') // مسح الخطأ عند اختيار دور جديد
+    setError('')
   }
 
   const handleNextStep = () => {
@@ -83,7 +85,6 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // منع الإرسال المتكرر - هذا مهم جداً!
     if (isSubmitting || loading) {
       console.log('⚠️ محاولة إرسال متكررة تم حظرها')
       return
@@ -121,7 +122,6 @@ export default function SignupPage() {
       
       console.log('✅ تم التسجيل بنجاح')
       
-      // إعادة التوجيه حسب الدور
       const routes: Record<string, string> = {
         student: '/student/onboarding',
         teacher: '/teacher/onboarding',
@@ -135,7 +135,6 @@ export default function SignupPage() {
     } catch (err: any) {
       console.error('❌ خطأ في التسجيل:', err)
       
-      // معالجة خاصة لخطأ Rate Limit
       if (err.message?.includes('rate limit') || err.message?.includes('Too Many Requests')) {
         setError('⏳ محاولات كثيرة جداً. يرجى الانتظار 15 دقيقة ثم المحاولة مرة أخرى.')
       } else if (err.message?.includes('already registered') || err.message?.includes('User already registered')) {
@@ -145,7 +144,6 @@ export default function SignupPage() {
       }
     } finally {
       setLoading(false)
-      // الانتظار 3 ثواني قبل السماح بمحاولة أخرى
       setTimeout(() => {
         setIsSubmitting(false)
       }, 3000)
@@ -164,12 +162,10 @@ export default function SignupPage() {
     { value: 'admin', label: 'مدير', icon: '👑', description: 'صلاحيات كاملة للمنصة' },
   ]
 
-  // صفحة اختيار الدور
   if (step === 'role') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4" dir="rtl">
         <div className="max-w-5xl w-full">
-          {/* العنوان */}
           <div className="flex justify-between items-center mb-8">
             <h1 
               className="text-3xl font-bold text-gray-900 dark:text-white cursor-pointer select-none"
@@ -188,47 +184,36 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* اختيار الدور - شبكة كبيرة */}
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             {publicRoles.map((role) => (
               <button
                 key={role.value}
                 onClick={() => handleRoleSelect(role.value)}
-                className={`group relative p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border-4 ${
+                className={`p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 transition-all ${
                   selectedRole === role.value
                     ? 'border-blue-500 scale-105'
-                    : 'border-transparent hover:border-blue-200 dark:hover:border-blue-800'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
                 }`}
               >
                 <div className="flex flex-col items-center text-center space-y-2">
-                  <div className="text-7xl transform group-hover:scale-110 transition-transform duration-300">
-                    {role.icon}
-                  </div>
+                  <div className="text-5xl">{role.icon}</div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                     {role.label}
                   </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {role.description}
                   </p>
-                  {selectedRole === role.value && (
-                    <div className="absolute top-3 left-3">
-                      <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-lg">✓</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </button>
             ))}
           </div>
 
-          {/* أدوار الإدارة */}
           {showAdminRoles && (
-            <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-xl">
-              <p className="text-center text-amber-700 dark:text-amber-400 font-medium mb-3 text-sm">
+            <div className="border-t-2 border-amber-200 dark:border-amber-700 pt-6">
+              <h2 className="text-xl font-bold text-amber-600 dark:text-amber-400 mb-4 text-center">
                 🔐 أدوار الإدارة
-              </p>
-              <div className="grid md:grid-cols-2 gap-3">
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
                 {adminRoles.map((role) => (
                   <button
                     key={role.value}
@@ -254,7 +239,6 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* الأزرار */}
           <div className="space-y-3">
             <button
               onClick={handleNextStep}
@@ -288,7 +272,6 @@ export default function SignupPage() {
             </button>
           </div>
 
-          {/* رابط تسجيل الدخول */}
           <p className="mt-6 text-center text-gray-600 dark:text-gray-400 text-sm">
             لديك حساب بالفعل؟{' '}
             <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
@@ -300,11 +283,9 @@ export default function SignupPage() {
     )
   }
 
-  // صفحة ملء البيانات
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4" dir="rtl">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
-        {/* العنوان */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">
             {publicRoles.find(r => r.value === selectedRole)?.icon || 
