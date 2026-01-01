@@ -42,31 +42,38 @@ export default function SignupPage() {
   }
 
   const handleGoogleSignup = async () => {
-    if (!selectedRole && step === 'role') {
-      setError('يرجى اختيار نوع الحساب أولاً')
-      return
-    }
-
-    if (isSubmitting) return
-
-    try {
-      setIsSubmitting(true)
-      const { error } = await supabase.auth.signInWithOAuth({
-  provider: 'google',
-  options: {
-    redirectTo: `${window.location.origin}/auth/callback?role=${selectedRole || 'student'}`,
-    queryParams: {
-      access_type: 'offline',
-      prompt: 'consent',
-    },
-  },
-})
-      if (error) throw error
-    } catch (err: any) {
-      setError(err.message || 'فشل التسجيل بـ Google')
-      setIsSubmitting(false)
-    }
+  if (!selectedRole && step === 'role') {
+    setError('يرجى اختيار نوع الحساب أولاً')
+    return
   }
+
+  if (isSubmitting || loading) {
+    console.log('⚠️ محاولة إرسال متكررة تم حظرها')
+    return
+  }
+
+  try {
+    setIsSubmitting(true)
+    setLoading(true)
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?role=${selectedRole || 'student'}`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    })
+    
+    if (error) throw error
+  } catch (err: any) {
+    setError(err.message || 'فشل التسجيل بـ Google')
+    setIsSubmitting(false)
+    setLoading(false)
+  }
+}
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role)
