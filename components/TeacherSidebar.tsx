@@ -9,7 +9,7 @@ export default function TeacherSidebar({
   setFilterCurriculum,
   filterSubject,
   setFilterSubject,
-  uniqueSubjects,
+  uniqueSubjects = [],
   minPrice,
   setMinPrice,
   maxPrice,
@@ -24,10 +24,12 @@ export default function TeacherSidebar({
 
   // حفظ الفلاتر في LocalStorage
   useEffect(() => {
-    localStorage.setItem(
-      "teacherFilters",
-      JSON.stringify({ filterStage, filterCurriculum, filterSubject, minPrice, maxPrice, experience, lessonType })
-    )
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        "teacherFilters",
+        JSON.stringify({ filterStage, filterCurriculum, filterSubject, minPrice, maxPrice, experience, lessonType })
+      )
+    }
   }, [filterStage, filterCurriculum, filterSubject, minPrice, maxPrice, experience, lessonType])
 
   return (
@@ -90,7 +92,7 @@ export default function TeacherSidebar({
               className="w-full border rounded-lg px-3 py-2"
             >
               <option value="">الكل</option>
-              {uniqueSubjects.map((subject: string) => (
+              {(uniqueSubjects || []).map((subject: string) => (
                 <option key={subject} value={subject}>
                   {subject}
                 </option>
