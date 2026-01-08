@@ -26,7 +26,7 @@ export default function ProtectedRoute({
 
     // إذا كانت الصفحة تتطلب تسجيل دخول والمستخدم غير مسجل
     if (requireAuth && !user) {
-      router.push(redirectTo)
+      router.replace(redirectTo)
       return
     }
 

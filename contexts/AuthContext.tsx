@@ -1,15 +1,21 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User } from '@supabase/supabase-js'
-import { useRouter } from 'next/navigation'
-import { getUserProfile, signOut as authSignOut, UserProfile } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react"
+import { User } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase"
+import { getUserProfile, signOut as authSignOut, UserProfile } from "@/lib/auth"
 
 interface AuthContextType {
   user: User | null
   profile: UserProfile | null
   loading: boolean
+  initialized: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -20,73 +26,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [initialized, setInitialized] = useState(false)
 
   const loadProfile = async (userId: string) => {
     try {
       const userProfile = await getUserProfile(userId)
       setProfile(userProfile)
-      
-      // التحقق من اكتمال البيانات وإعادة التوجيه
-      if (userProfile && !userProfile.profile_completed) {
-        const onboardingRoutes: Record<string, string> = {
-          student: '/student/onboarding',
-          teacher: '/teacher/onboarding',
-          center: '/center/onboarding',
-          service: '/service/onboarding',
-        }
-        
-        const route = onboardingRoutes[userProfile.role]
-        if (route) {
-          router.push(route)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error)
+    } catch (err) {
+      console.error("Load profile error:", err)
       setProfile(null)
     }
   }
 
   const refreshProfile = async () => {
-    if (user) {
-      await loadProfile(user.id)
-    }
+    if (user) await loadProfile(user.id)
   }
 
   useEffect(() => {
-    // الحصول على الجلسة الحالية
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        loadProfile(session.user.id)
-      }
-      setLoading(false)
-    })
+    let mounted = true
 
-    // الاستماع لتغيرات المصادقة
+    const init = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!mounted) return
+
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+
+      if (sessionUser) {
+        await loadProfile(sessionUser.id)
+      }
+
+      setLoading(false)
+      setInitialized(true)
+    }
+
+    init()
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        await loadProfile(session.user.id)
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return
+
+      const sessionUser = session?.user ?? null
+      setUser(sessionUser)
+
+      if (sessionUser) {
+        await loadProfile(sessionUser.id)
       } else {
         setProfile(null)
       }
-      
-      setLoading(false)
 
-      // إعادة التوجيه التلقائي
-      if (event === 'SIGNED_OUT') {
-        router.push('/')
-      }
+      setLoading(false)
     })
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
-  }, [router])
+  }, [])
 
   const handleSignOut = async () => {
     await authSignOut()
@@ -98,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         profile,
         loading,
+        initialized,
         signOut: handleSignOut,
         refreshProfile,
       }}
@@ -108,9 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+  const ctx = useContext(AuthContext)
+  if (!ctx) {
+    throw new Error("useAuth must be used within AuthProvider")
   }
-  return context
+  return ctx
 }
