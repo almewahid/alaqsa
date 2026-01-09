@@ -15,9 +15,9 @@ export default function AuthCallbackClient() {
 
     const run = async () => {
       try {
-        console.log("🟢 Auth callback started")
+        console.log("🟢 Starting auth callback")
 
-        // ✅ Supabase يكون أنشأ session بالفعل
+        // الحصول على الجلسة
         const {
           data: { session },
           error,
@@ -30,12 +30,14 @@ export default function AuthCallbackClient() {
         }
 
         const user = session.user
+        console.log("✅ User authenticated:", user.id)
+
         const role =
           searchParams.get("role") ||
           user.user_metadata?.role ||
           "student"
 
-        // 👤 هل المستخدم موجود؟
+        // التحقق من وجود المستخدم
         const { data: existingUser, error: fetchError } =
           await supabase
             .from("users")
@@ -49,15 +51,31 @@ export default function AuthCallbackClient() {
           return
         }
 
-        // ✅ مستخدم موجود
+        // مستخدم موجود - توجيه حسب نوعه
         if (existingUser) {
-          console.log("✅ Existing user")
-          router.replace("/")
+          console.log("✅ Existing user found")
+          
+          switch (existingUser.user_type) {
+            case "student":
+              router.replace("/studentdashboard")
+              break
+            case "teacher":
+              router.replace("/teacherdashboard")
+              break
+            case "center":
+              router.replace("/centerdashboard")
+              break
+            case "service":
+              router.replace("/servicedashboard")
+              break
+            default:
+              router.replace("/")
+          }
           return
         }
 
-        // 🆕 إنشاء مستخدم
-        console.log("🆕 Creating user")
+        // مستخدم جديد - إنشاء حساب
+        console.log("🆕 Creating new user")
 
         const { data: newUser, error: createError } =
           await supabase
@@ -80,7 +98,9 @@ export default function AuthCallbackClient() {
           return
         }
 
-        // 📦 بيانات حسب الدور
+        console.log("✅ User created:", newUser.id)
+
+        // إنشاء بيانات حسب الدور
         switch (role) {
           case "student":
             await supabase.from("students").insert({
@@ -126,7 +146,7 @@ export default function AuthCallbackClient() {
     <div className="min-h-screen flex items-center justify-center" dir="rtl">
       <div className="text-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-6"></div>
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           جاري إتمام تسجيل الدخول...
         </h2>
       </div>
