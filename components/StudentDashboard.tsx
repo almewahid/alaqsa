@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,14 +21,7 @@ import {
   Menu,
   X,
 } from "lucide-react"
-
-// بيانات الطالب
-const studentData = {
-  name: "أحمد محمد",
-  completedSessions: 24,
-  upcomingSessions: 3,
-  overallProgress: 78,
-}
+import { supabase } from "@/lib/supabase"
 
 // بيانات الجلسات القادمة
 const upcomingSessions = [
@@ -113,6 +106,60 @@ const getStatusIcon = (status: string) => {
 
 export default function StudentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  
+  // بيانات الطالب من قاعدة البيانات
+  const [studentData, setStudentData] = useState({
+    name: "...",
+    completedSessions: 0,
+    upcomingSessions: 0,
+    overallProgress: 0,
+  })
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // احصل على المستخدم الحالي
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          // احصل على بيانات المستخدم
+          const { data, error } = await supabase
+            .from("users")
+            .select("full_name")
+            .eq("auth_id", user.id)
+            .single()
+
+          if (data && !error) {
+            setStudentData(prev => ({
+              ...prev,
+              name: data.full_name,
+              completedSessions: 24,
+              upcomingSessions: 3,
+              overallProgress: 78,
+            }))
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error fetching user:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">جاري التحميل...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background flex" dir="rtl">
